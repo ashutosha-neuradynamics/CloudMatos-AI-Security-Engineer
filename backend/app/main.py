@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
-from app.routers import query, policy
+from app.routers import query, policy, logs, auth
 
 load_dotenv()
 
@@ -37,6 +37,8 @@ app.add_middleware(
 # Include routers
 app.include_router(query.router)
 app.include_router(policy.router)
+app.include_router(logs.router)
+app.include_router(auth.router)
 
 
 @app.get("/v1/health")
