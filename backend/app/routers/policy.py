@@ -17,11 +17,11 @@ router = APIRouter()
 async def get_policy_rules(db: Session = Depends(get_db)):
     """
     Retrieve all policy rules.
-    
+
     Returns a list of all configured policy rules.
     """
     rules = db.query(PolicyRule).all()
-    
+
     rule_schemas = [
         PolicyRuleSchema(
             id=rule.id,
@@ -32,11 +32,11 @@ async def get_policy_rules(db: Session = Depends(get_db)):
             pattern_type=rule.pattern_type,
             severity=rule.severity.value,
             action=rule.action.value,
-            enabled=rule.enabled
+            enabled=rule.enabled,
         )
         for rule in rules
     ]
-    
+
     return PolicyResponse(rules=rule_schemas)
 
 
@@ -48,20 +48,20 @@ async def update_policy_rules(
 ):
     """
     Update policy rules (admin only).
-    
+
     - **rules**: List of policy rules to create or update
-    
+
     Requires admin authentication.
     """
     updated_rules = []
-    
+
     for rule_data in request.rules:
         if rule_data.id:
             rule = db.query(PolicyRule).filter_by(id=rule_data.id).first()
             if not rule:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Policy rule with id {rule_data.id} not found"
+                    detail=f"Policy rule with id {rule_data.id} not found",
                 )
             rule.name = rule_data.name
             rule.description = rule_data.description
@@ -76,9 +76,9 @@ async def update_policy_rules(
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Policy rule with name '{rule_data.name}' already exists"
+                    detail=f"Policy rule with name '{rule_data.name}' already exists",
                 )
-            
+
             rule = PolicyRule(
                 name=rule_data.name,
                 description=rule_data.description,
@@ -87,12 +87,12 @@ async def update_policy_rules(
                 pattern_type=rule_data.pattern_type,
                 severity=Severity(rule_data.severity),
                 action=Decision(rule_data.action),
-                enabled=rule_data.enabled
+                enabled=rule_data.enabled,
             )
             db.add(rule)
-        
+
         updated_rules.append(rule)
-    
+
     try:
         db.commit()
         for rule in updated_rules:
@@ -101,9 +101,9 @@ async def update_policy_rules(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating policy rules: {str(e)}"
+            detail=f"Error updating policy rules: {str(e)}",
         )
-    
+
     rule_schemas = [
         PolicyRuleSchema(
             id=rule.id,
@@ -114,10 +114,9 @@ async def update_policy_rules(
             pattern_type=rule.pattern_type,
             severity=rule.severity.value,
             action=rule.action.value,
-            enabled=rule.enabled
+            enabled=rule.enabled,
         )
         for rule in updated_rules
     ]
-    
-    return PolicyResponse(rules=rule_schemas)
 
+    return PolicyResponse(rules=rule_schemas)
