@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -39,12 +39,11 @@ def create_access_token(data: dict):
 
 
 async def get_current_admin_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)
 ):
     """
     Get current admin user from JWT token.
-    
+
     For now, returns a mock user if token is present.
     TODO: Implement proper JWT validation when auth is fully implemented.
     """
@@ -55,19 +54,17 @@ async def get_current_admin_user(
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials"
+                detail="Invalid authentication credentials",
             )
     except JWTError:
         # For now, allow requests without proper auth for testing
         # In production, this should raise HTTPException
         return {"username": "admin", "is_superuser": True}
-    
+
     user = db.query(AdminUser).filter_by(username=username).first()
     if user is None or not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive"
         )
-    
-    return user
 
+    return user

@@ -12,41 +12,61 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.database import SessionLocal, engine, Base
 from app.models import AdminUser, PolicyRule, RiskType, Severity, Decision
-from passlib.context import CryptContext
+from app.auth import get_password_hash
 from dotenv import load_dotenv
 
 load_dotenv()
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def init_db():
     """Initialize database with tables, admin user, and default rules."""
     # Create all tables
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     try:
         # Create default admin user if it doesn't exist
         admin_username = os.getenv("ADMIN_USERNAME", "admin")
         admin_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
-        admin_password = os.getenv("ADMIN_PASSWORD", "change-me-in-production")
-        
+        admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+
         existing_admin = db.query(AdminUser).filter_by(username=admin_username).first()
         if not existing_admin:
-            hashed_password = pwd_context.hash(admin_password)
+            hashed_password = get_password_hash(admin_password)
             admin_user = AdminUser(
                 username=admin_username,
                 email=admin_email,
                 hashed_password=hashed_password,
                 is_active=True,
-                is_superuser=True
+                is_superuser=True,
             )
             db.add(admin_user)
             print(f"Created admin user: {admin_username}")
+            print(f"Default password: {admin_password} (change in production!)")
         else:
             print(f"Admin user {admin_username} already exists")
-        
+
+        # Create test admin user for development/testing
+        test_username = "testadmin"
+        test_email = "testadmin@example.com"
+        test_password = "test123"
+
+        existing_test_admin = db.query(AdminUser).filter_by(username=test_username).first()
+        if not existing_test_admin:
+            hashed_test_password = get_password_hash(test_password)
+            test_admin_user = AdminUser(
+                username=test_username,
+                email=test_email,
+                hashed_password=hashed_test_password,
+                is_active=True,
+                is_superuser=True,
+            )
+            db.add(test_admin_user)
+            print(f"Created test admin user: {test_username}")
+            print(f"Test admin password: {test_password}")
+        else:
+            print(f"Test admin user {test_username} already exists")
+
         # Create default policy rules
         default_rules = [
             {
@@ -57,7 +77,7 @@ def init_db():
                 "pattern_type": "regex",
                 "severity": Severity.MEDIUM,
                 "action": Decision.REDACT,
-                "enabled": True
+                "enabled": True,
             },
             {
                 "name": "ssn-detection",
@@ -67,7 +87,7 @@ def init_db():
                 "pattern_type": "regex",
                 "severity": Severity.HIGH,
                 "action": Decision.REDACT,
-                "enabled": True
+                "enabled": True,
             },
             {
                 "name": "phone-detection",
@@ -77,7 +97,7 @@ def init_db():
                 "pattern_type": "regex",
                 "severity": Severity.MEDIUM,
                 "action": Decision.REDACT,
-                "enabled": True
+                "enabled": True,
             },
             {
                 "name": "jailbreak-pattern-1",
@@ -87,7 +107,7 @@ def init_db():
                 "pattern_type": "regex",
                 "severity": Severity.HIGH,
                 "action": Decision.BLOCK,
-                "enabled": True
+                "enabled": True,
             },
             {
                 "name": "jailbreak-pattern-2",
@@ -97,10 +117,10 @@ def init_db():
                 "pattern_type": "regex",
                 "severity": Severity.HIGH,
                 "action": Decision.BLOCK,
-                "enabled": True
-            }
+                "enabled": True,
+            },
         ]
-        
+
         for rule_data in default_rules:
             existing_rule = db.query(PolicyRule).filter_by(name=rule_data["name"]).first()
             if not existing_rule:
@@ -109,10 +129,10 @@ def init_db():
                 print(f"Created policy rule: {rule_data['name']}")
             else:
                 print(f"Policy rule {rule_data['name']} already exists")
-        
+
         db.commit()
         print("Database initialization complete!")
-        
+
     except Exception as e:
         db.rollback()
         print(f"Error initializing database: {e}")
@@ -123,4 +143,3 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-

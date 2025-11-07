@@ -43,6 +43,51 @@ The Prompt Firewall is designed to:
 
 ### Local Development
 
+#### Option 1: Using Docker Compose (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd cloudmatos
+   ```
+
+2. **Start services with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Initialize database**
+   ```bash
+   # Run migrations
+   docker-compose exec backend alembic upgrade head
+   
+   # Initialize default data (creates admin users and policy rules)
+   docker-compose exec backend python -m app.init_db
+   ```
+
+   This will create two admin users:
+   - **Admin**: `admin` / `admin123`
+   - **Test Admin**: `testadmin` / `test123`
+
+4. **Access services**
+   - Backend API: http://localhost:8000
+   - API Docs: http://localhost:8000/docs
+   - Database: localhost:5432
+
+5. **Set up frontend** (in a separate terminal)
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+6. **Stop services**
+   ```bash
+   docker-compose down
+   ```
+
+#### Option 2: Manual Setup
+
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
@@ -57,23 +102,30 @@ The Prompt Firewall is designed to:
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables**
+3. **Set up PostgreSQL database**
+   - Install PostgreSQL locally or use Docker:
+     ```bash
+     docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=prompt_firewall -p 5432:5432 postgres:15-alpine
+     ```
+
+4. **Set up environment variables**
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/prompt_firewall
    ```
 
-4. **Run database migrations**
+5. **Run database migrations**
    ```bash
    alembic upgrade head
    ```
 
-5. **Start backend server**
+6. **Start backend server**
    ```bash
    uvicorn app.main:app --reload
    ```
 
-6. **Set up frontend**
+7. **Set up frontend**
    ```bash
    cd frontend
    npm install
@@ -84,10 +136,9 @@ The Prompt Firewall is designed to:
 
 - [Requirements](memory-bank/features/feature-prompt-firewall/requirements.md)
 - [Implementation Plan](memory-bank/features/feature-prompt-firewall/implementation_plan.md)
-- [API Documentation](docs/api.md) (Coming soon)
-- [Deployment Guide](docs/DEPLOY.md) (Coming soon)
-- [Architecture Diagram](docs/architecture.png) (Coming soon)
-- [Threat Model](docs/threat-model.md) (Coming soon)
+- [Deployment Guide](DEPLOY.md) - Complete deployment instructions
+- [SDK Documentation](sdk/README.md) - Python SDK usage
+- API Documentation: Available at `/docs` when backend is running (Swagger UI)
 
 ## 🧪 Testing
 
@@ -119,10 +170,14 @@ npm test
 
 ## 💰 Cost Estimate
 
-Estimated monthly cost: <$50 for simulated traffic
-- Cloud Run: ~$10-20
-- Cloud SQL: ~$20-30
-- Storage/Logging: ~$5-10
+Estimated monthly cost: **$15-50/month** for MVP scale (< 10,000 requests/day)
+- Cloud Run (Backend): ~$5-15
+- Cloud SQL (PostgreSQL): ~$7-10
+- Secret Manager: ~$0.06
+- Frontend Hosting (Vercel): Free tier or ~$20/month
+- Cloud Build (CI/CD): ~$1-5
+
+See [DEPLOY.md](DEPLOY.md) for detailed cost breakdown and optimization tips.
 
 ## 📝 License
 
