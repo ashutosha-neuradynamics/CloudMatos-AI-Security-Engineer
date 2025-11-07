@@ -310,7 +310,7 @@ class TestLogsMethod:
         
         client = PromptFirewallClient(base_url="http://localhost:8000")
         result = client.get_logs(
-            type="PII",
+            risk_type="PII",
             severity="high",
             date_from="2024-01-01T00:00:00Z",
             date_to="2024-01-31T23:59:59Z",
@@ -345,7 +345,7 @@ class TestLogsMethod:
         mock_client_class.return_value = mock_client
         
         client = PromptFirewallClient(base_url="http://localhost:8000")
-        result = client.get_logs(format="csv")
+        result = client.get_logs(export_format="csv")
         
         assert isinstance(result, str)
         assert "id,request_id" in result

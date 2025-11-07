@@ -67,9 +67,9 @@ class PromptFirewallClient:
                     if e.response.headers.get("content-type") == "application/json"
                     else None
                 ),
-            )
+            ) from e
         except httpx.RequestError as e:
-            raise APIError(f"Request failed: {str(e)}")
+            raise APIError(f"Request failed: {str(e)}") from e
 
     def get_policy(self) -> Dict[str, Any]:
         """
@@ -87,7 +87,7 @@ class PromptFirewallClient:
             return resp.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise AuthenticationError("Authentication required")
+                raise AuthenticationError("Authentication required") from e
             raise APIError(
                 f"API request failed: {e.response.text}",
                 status_code=e.response.status_code,
@@ -96,9 +96,9 @@ class PromptFirewallClient:
                     if e.response.headers.get("content-type") == "application/json"
                     else None
                 ),
-            )
+            ) from e
         except httpx.RequestError as e:
-            raise APIError(f"Request failed: {str(e)}")
+            raise APIError(f"Request failed: {str(e)}") from e
 
     def update_policy(self, rules: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -122,7 +122,7 @@ class PromptFirewallClient:
             return resp.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise AuthenticationError("Authentication required")
+                raise AuthenticationError("Authentication required") from e
             raise APIError(
                 f"API request failed: {e.response.text}",
                 status_code=e.response.status_code,
@@ -131,41 +131,41 @@ class PromptFirewallClient:
                     if e.response.headers.get("content-type") == "application/json"
                     else None
                 ),
-            )
+            ) from e
         except httpx.RequestError as e:
-            raise APIError(f"Request failed: {str(e)}")
+            raise APIError(f"Request failed: {str(e)}") from e
 
     def get_logs(
         self,
-        type: Optional[str] = None,
+        risk_type: Optional[str] = None,
         severity: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
-        format: str = "json",
+        export_format: str = "json",
     ) -> Dict[str, Any]:
         """
         Retrieve firewall logs with filtering and pagination.
 
         Args:
-            type: Filter by risk type (PII, PHI, PROMPT_INJECTION)
+            risk_type: Filter by risk type (PII, PHI, PROMPT_INJECTION)
             severity: Filter by severity (high, medium, low)
             date_from: Start date (ISO format)
             date_to: End date (ISO format)
             limit: Number of logs to return (1-1000)
             offset: Pagination offset
-            format: Export format (json or csv)
+            export_format: Export format (json or csv)
 
         Returns:
-            Dictionary containing logs and pagination info (or CSV string if format='csv')
+            Dictionary containing logs and pagination info (or CSV string if export_format='csv')
 
         Raises:
             APIError: If the API request fails
         """
-        params = {"limit": limit, "offset": offset, "format": format}
-        if type:
-            params["type"] = type
+        params = {"limit": limit, "offset": offset, "format": export_format}
+        if risk_type:
+            params["type"] = risk_type
         if severity:
             params["severity"] = severity
         if date_from:
@@ -176,12 +176,12 @@ class PromptFirewallClient:
         try:
             resp = self.client.get("/v1/logs", params=params)
             resp.raise_for_status()
-            if format == "csv":
+            if export_format == "csv":
                 return resp.text
             return resp.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise AuthenticationError("Authentication required")
+                raise AuthenticationError("Authentication required") from e
             raise APIError(
                 f"API request failed: {e.response.text}",
                 status_code=e.response.status_code,
@@ -190,9 +190,9 @@ class PromptFirewallClient:
                     if e.response.headers.get("content-type") == "application/json"
                     else None
                 ),
-            )
+            ) from e
         except httpx.RequestError as e:
-            raise APIError(f"Request failed: {str(e)}")
+            raise APIError(f"Request failed: {str(e)}") from e
 
     def health_check(self) -> Dict[str, Any]:
         """
@@ -209,7 +209,7 @@ class PromptFirewallClient:
             resp.raise_for_status()
             return resp.json()
         except httpx.RequestError as e:
-            raise APIError(f"Request failed: {str(e)}")
+            raise APIError(f"Request failed: {str(e)}") from e
 
     def close(self):
         """Close the HTTP client."""

@@ -99,7 +99,7 @@ logs = client.get_logs()
 
 # Get logs with filters
 logs = client.get_logs(
-    type="PII",
+    risk_type="PII",
     severity="high",
     date_from="2024-01-01T00:00:00Z",
     date_to="2024-01-31T23:59:59Z",
@@ -108,7 +108,7 @@ logs = client.get_logs(
 )
 
 # Export logs as CSV
-csv_data = client.get_logs(format="csv")
+csv_data = client.get_logs(export_format="csv")
 ```
 
 ### Health Check
@@ -150,7 +150,7 @@ except APIError as e:
 - `query(prompt=None, response=None)` - Process prompt/response through firewall
 - `get_policy()` - Retrieve all policy rules
 - `update_policy(rules)` - Update policy rules (admin only)
-- `get_logs(type=None, severity=None, date_from=None, date_to=None, limit=50, offset=0, format='json')` - Retrieve logs
+- `get_logs(risk_type=None, severity=None, date_from=None, date_to=None, limit=50, offset=0, export_format='json')` - Retrieve logs
 - `health_check()` - Check API health status
 - `close()` - Close the HTTP client
 
