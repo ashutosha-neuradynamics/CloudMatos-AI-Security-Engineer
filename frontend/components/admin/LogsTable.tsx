@@ -24,22 +24,53 @@ export default function LogsTable({ filters }: LogsTableProps) {
   const [limit, setLimit] = useState(50);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [clientMode, setClientMode] = useState(false);
+  const [clientAll, setClientAll] = useState<LogEntry[]>([]);
 
   const fetchLogs = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await apiClient.getLogs({
-        ...filters,
-        limit,
-        offset,
-        format: 'json',
-      }) as LogsResponse;
-      
-      setLogs(response.logs);
-      setTotal(response.total);
-      setHasMore(response.has_more);
+      const hasTypeOrSeverity = Boolean(filters?.type || filters?.severity);
+
+      if (hasTypeOrSeverity) {
+        // Fetch a larger batch without type/severity to avoid backend JSON LIKE error, then filter client-side
+        const { type, severity, ...rest } = filters || {};
+        const response = await apiClient.getLogs({
+          ...rest,
+          limit: 1000,
+          offset: 0,
+          format: 'json',
+        }) as LogsResponse;
+
+        const filtered = response.logs.filter((log) => {
+          const risks = log.risks || [];
+          const typeOk = type ? risks.some((r) => r.type === type) : true;
+          const severityOk = severity ? risks.some((r) => r.severity === severity) : true;
+          return typeOk && severityOk;
+        });
+
+        setClientMode(true);
+        setClientAll(filtered);
+        setTotal(filtered.length);
+        setHasMore(offset + limit < filtered.length);
+        setLogs(filtered.slice(offset, offset + limit));
+      } else {
+        // Normal server-side pagination when no problematic filters are used
+        const response = await apiClient.getLogs({
+          ...filters,
+          limit,
+          offset,
+          format: 'json',
+        }) as LogsResponse;
+        
+        setClientMode(false);
+        setClientAll([]);
+        setLogs(response.logs);
+        setTotal(response.total);
+        setHasMore(response.has_more);
+      }
     } catch (err) {
       if (err instanceof APIError) {
         setError(err.message);
@@ -54,6 +85,15 @@ export default function LogsTable({ filters }: LogsTableProps) {
   useEffect(() => {
     fetchLogs();
   }, [limit, offset, filters]);
+
+  // When in client-side mode and user changes page size or offset, recompute from cached filtered results
+  useEffect(() => {
+    if (clientMode) {
+      setLogs(clientAll.slice(offset, offset + limit));
+      setHasMore(offset + limit < clientAll.length);
+      setTotal(clientAll.length);
+    }
+  }, [clientMode, clientAll, limit, offset]);
 
   const handleExport = async (format: 'json' | 'csv') => {
     try {
